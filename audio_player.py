@@ -3,8 +3,10 @@ Audio Player Module
 Handles audio playback on the Raspberry Pi using mpv
 """
 
+import json
 import logging
 import os
+import socket as _socket
 import subprocess
 import time
 from typing import Optional
@@ -55,8 +57,52 @@ class AudioPlayer:
         except Exception as e:
             logger.warning(f"Could not start raspotify: {e}")
 
-    def play(self, url: str):
-        """Start playing a stream"""
+    def _mpv_send(self, cmd: list) -> bool:
+        """Send a JSON command to mpv via IPC socket. Returns True on success."""
+        try:
+            s = _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM)
+            s.settimeout(0.5)
+            s.connect(self.IPC_SOCKET)
+            s.sendall((json.dumps({"command": cmd}) + '\n').encode())
+            s.close()
+            return True
+        except Exception:
+            return False
+
+    def _mpv_set_vol(self, percent: int):
+        """Set mpv's internal software volume (0–100) via IPC."""
+        self._mpv_send(["set_property", "volume", max(0, min(100, percent))])
+
+    def fade_out(self, duration: float = 0.4, steps: int = 15):
+        """Smoothly ramp mpv volume to 0. Blocking."""
+        if not self.is_playing():
+            return
+        start = int(self.current_volume * 100)
+        for i in range(steps, -1, -1):
+            self._mpv_set_vol(int(start * i / steps))
+            time.sleep(duration / steps)
+
+    def fade_in(self, duration: float = 0.4, steps: int = 15):
+        """Smoothly ramp mpv volume from 0 to current_volume. Blocking."""
+        if not self.is_playing():
+            return
+        target = int(self.current_volume * 100)
+        # Wait for IPC socket to be ready (mpv may still be starting)
+        for _ in range(30):
+            if self._mpv_send(["set_property", "volume", 0]):
+                break
+            time.sleep(0.05)
+        for i in range(1, steps + 1):
+            self._mpv_set_vol(int(target * i / steps))
+            time.sleep(duration / steps)
+
+    def stop_fade(self, release_spotify: bool = False, duration: float = 0.4):
+        """Fade out then stop. Blocking."""
+        self.fade_out(duration)
+        self.stop(release_spotify)
+
+    def play(self, url: str, start_silent: bool = False):
+        """Start playing a stream. Pass start_silent=True when fade-in follows."""
         self.stop()  # stop mpv only, does not touch raspotify
         if self._spotify_active():
             self._pause_spotify()
@@ -76,7 +122,7 @@ class AudioPlayer:
                 env['PULSE_SERVER'] = pulse_server
             
             # Using mpv for reliable streaming
-            volume_percent = int(self.current_volume * 100)
+            volume_percent = 0 if start_silent else int(self.current_volume * 100)
             self.process = subprocess.Popen(
                 [
                     'mpv',
