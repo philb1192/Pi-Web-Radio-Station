@@ -20,24 +20,6 @@
                 <button class="api-btn output-btn" id="outputBtn" onclick="toggleAudioOutput()" title="Audio: Pi speakers — click to switch to browser">🔊 Pi</button>
                 <button class="api-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle dark/light theme">🌙</button>
                 <a class="api-btn" href="/help" target="_blank" title="User guide">❓</a>
-                <button class="api-btn" onclick="toggleApiInfo()">📡 API</button>
-            </div>
-        </div>
-        
-        <!-- API Info Modal -->
-        <div id="apiModal" class="modal">
-            <div class="modal-content">
-                <span class="close" onclick="toggleApiInfo()">&times;</span>
-                <h3>📡 REST API</h3>
-                <p>Control from Node-RED or Home Assistant:</p>
-                <div class="api-endpoints">
-                    <p><code>GET /api/status</code> - Get current state</p>
-                    <p><code>POST /api/play</code> - Play station (body: {"station_id": 1})</p>
-                    <p><code>POST /api/pause</code> - Pause playback</p>
-                    <p><code>POST /api/volume</code> - Set volume (body: {"volume": 0.9})</p>
-                    <p><code>POST /api/speak</code> - Text-to-speech (body: {"text": "Hello", "volume": 50})</p>
-                    <p style="margin-top: 10px; font-size: 13px; color: #666;">Note: TTS volume range is 0-100</p>
-                </div>
             </div>
         </div>
         

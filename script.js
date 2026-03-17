@@ -48,19 +48,6 @@ function showTab(tabName) {
     currentTab = tabName;
 }
 
-function toggleApiInfo() {
-    const modal = document.getElementById('apiModal');
-    modal.classList.toggle('show');
-}
-
-// Close modal when clicking outside of it
-window.onclick = function(event) {
-    const modal = document.getElementById('apiModal');
-    if (event.target === modal) {
-        modal.classList.remove('show');
-    }
-}
-
 function connect() {
     ws = new WebSocket(`ws://${window.location.host}/ws`);
     
