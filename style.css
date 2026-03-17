@@ -550,7 +550,8 @@ button {
     width: 100%;
 }
 
-.setting-row select {
+.setting-row select,
+.setting-row input[type="text"] {
     width: 100%;
     padding: 8px 10px;
     border: 1px solid var(--border-color);
@@ -559,6 +560,7 @@ button {
     background: var(--input-bg);
     color: var(--input-color);
     cursor: pointer;
+    box-sizing: border-box;
 }
 
 .settings-actions {

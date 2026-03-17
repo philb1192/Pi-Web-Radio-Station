@@ -684,6 +684,10 @@ async function loadSettings() {
         if (config.default_audio_output) {
             document.getElementById('settingAudioOutput').value = config.default_audio_output;
         }
+        if (config.bluetooth_name !== undefined)
+            document.getElementById('settingBluetoothName').value = config.bluetooth_name;
+        if (config.spotify_name !== undefined)
+            document.getElementById('settingSpotifyName').value = config.spotify_name;
 
         const modelSelect = document.getElementById('settingTtsModel');
         modelSelect.innerHTML = '';
@@ -713,6 +717,8 @@ async function saveSettings() {
         default_tts_volume: parseInt(document.getElementById('settingTtsVolume').value),
         default_audio_output: document.getElementById('settingAudioOutput').value,
         default_tts_model: document.getElementById('settingTtsModel').value,
+        bluetooth_name: document.getElementById('settingBluetoothName').value.trim(),
+        spotify_name: document.getElementById('settingSpotifyName').value.trim(),
     };
     const statusEl = document.getElementById('settingsSaveStatus');
     try {

@@ -7,6 +7,8 @@ Audio plays on the Raspberry Pi, not in browser
 import asyncio
 import json
 import logging
+import re
+import subprocess
 from aiohttp import web
 from typing import Optional
 import os
@@ -982,9 +984,43 @@ class RadioServer:
         except Exception as e:
             return web.json_response({'status': 'error', 'message': str(e)}, status=500)
 
+    def _get_bluetooth_name(self) -> str:
+        try:
+            r = subprocess.run(['bluetoothctl', 'show'], capture_output=True, text=True, timeout=3)
+            m = re.search(r'^\s*Alias:\s*(.+)$', r.stdout, re.MULTILINE)
+            return m.group(1).strip() if m else ''
+        except Exception:
+            return ''
+
+    def _set_bluetooth_name(self, name: str):
+        subprocess.run(['bluetoothctl', 'system-alias', name], capture_output=True, timeout=5)
+
+    def _get_spotify_name(self) -> str:
+        try:
+            r = subprocess.run(['sudo', 'cat', '/etc/raspotify/conf'], capture_output=True, text=True, timeout=3)
+            m = re.search(r'^LIBRESPOT_NAME="?([^"\n]+)"?\s*$', r.stdout, re.MULTILINE)
+            return m.group(1).strip() if m else ''
+        except Exception:
+            return ''
+
+    def _set_spotify_name(self, name: str):
+        r = subprocess.run(['sudo', 'cat', '/etc/raspotify/conf'], capture_output=True, text=True, timeout=3)
+        new_content = re.sub(
+            r'^LIBRESPOT_NAME=.*$',
+            f'LIBRESPOT_NAME="{name}"',
+            r.stdout, flags=re.MULTILINE
+        )
+        proc = subprocess.Popen(['sudo', 'tee', '/etc/raspotify/conf'],
+                                stdin=subprocess.PIPE, stdout=subprocess.DEVNULL)
+        proc.communicate(new_content.encode())
+        subprocess.run(['sudo', 'systemctl', 'restart', 'raspotify'], capture_output=True, timeout=10)
+
     async def api_get_config(self, request):
-        """Get current configuration"""
-        return web.json_response(self.load_config())
+        """Get current configuration including device names"""
+        config = self.load_config()
+        config['bluetooth_name'] = self._get_bluetooth_name()
+        config['spotify_name'] = self._get_spotify_name()
+        return web.json_response(config)
 
     async def api_save_config(self, request):
         """Save user settings; applies relevant ones immediately."""
@@ -1005,6 +1041,12 @@ class RadioServer:
                     self.audio_player.set_volume(vol)
             if 'default_tts_model' in data and data['default_tts_model']:
                 self.tts_engine.set_model(data['default_tts_model'])
+            if 'bluetooth_name' in data and data['bluetooth_name'].strip():
+                await asyncio.get_event_loop().run_in_executor(
+                    None, self._set_bluetooth_name, data['bluetooth_name'].strip())
+            if 'spotify_name' in data and data['spotify_name'].strip():
+                await asyncio.get_event_loop().run_in_executor(
+                    None, self._set_spotify_name, data['spotify_name'].strip())
 
             await self.broadcast_state()
             return web.json_response({'status': 'ok'})
