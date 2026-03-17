@@ -5,6 +5,7 @@ Audio plays on the Raspberry Pi, not in browser
 """
 
 import asyncio
+from datetime import datetime, timezone
 import json
 import logging
 import re
@@ -734,6 +735,61 @@ class RadioServer:
         except Exception as e:
             return web.json_response({'status': 'error', 'message': str(e)}, status=500)
     
+    async def api_backup(self, request):
+        """Export full backup: all stations + all settings."""
+        config = self.load_config()
+        config.pop('default_station_id', None)  # transient, not useful after reinstall
+        backup = {
+            'version': 1,
+            'exported_at': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
+            'stations': [{'name': s['name'], 'url': s['url']} for s in self.state['stations']],
+            'config': config,
+        }
+        filename = 'cooperstation-backup-' + datetime.now().strftime('%Y%m%d-%H%M%S') + '.json'
+        return web.Response(
+            text=json.dumps(backup, indent=2),
+            content_type='application/json',
+            headers={'Content-Disposition': f'attachment; filename="{filename}"'}
+        )
+
+    async def api_restore(self, request):
+        """Restore from full backup: replaces stations and restores settings."""
+        try:
+            data = await request.json()
+            if data.get('version') != 1:
+                return web.json_response({'status': 'error', 'message': 'Unknown backup version'}, status=400)
+
+            station_count = 0
+            if 'stations' in data and isinstance(data['stations'], list):
+                new_stations = []
+                for i, s in enumerate(data['stations'], 1):
+                    if 'name' in s and 'url' in s:
+                        new_stations.append({'id': i, 'name': s['name'], 'url': s['url']})
+                self.state['stations'] = new_stations
+                self.save_stations()
+                station_count = len(new_stations)
+                asyncio.create_task(self._check_all_stations())
+
+            if 'config' in data and isinstance(data['config'], dict):
+                config = self.load_config()
+                allowed = {'default_volume', 'default_tts_volume', 'default_audio_output', 'default_tts_model'}
+                for key in allowed:
+                    if key in data['config']:
+                        config[key] = data['config'][key]
+                self.save_config(config)
+                if 'default_volume' in data['config']:
+                    vol = max(0.0, min(1.0, float(data['config']['default_volume'])))
+                    self.state['volume'] = vol
+                    if not self.state['muted'] and self.state.get('audio_output', 'pi') == 'pi':
+                        self.audio_player.set_volume(vol)
+                if data['config'].get('default_tts_model'):
+                    self.tts_engine.set_model(data['config']['default_tts_model'])
+
+            await self.broadcast_state()
+            return web.json_response({'status': 'ok', 'stations': station_count})
+        except Exception as e:
+            return web.json_response({'status': 'error', 'message': str(e)}, status=500)
+
     async def api_reorder_stations(self, request):
         """Reorder stations to match the supplied list of IDs."""
         try:
@@ -1131,6 +1187,8 @@ def main():
     app.router.add_post('/api/volume', server.api_volume)
     app.router.add_get('/api/export', server.api_export_stations)
     app.router.add_post('/api/import', server.api_import_stations)
+    app.router.add_get('/api/backup', server.api_backup)
+    app.router.add_post('/api/restore', server.api_restore)
     app.router.add_post('/api/stations/reorder', server.api_reorder_stations)
     app.router.add_post('/api/bluetooth', server.api_bluetooth)
     app.router.add_post('/api/spotify', server.api_spotify)

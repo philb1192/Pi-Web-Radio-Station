@@ -667,6 +667,54 @@ async function downloadModel(key, onnxPath, jsonPath) {
     if (result.status !== 'ok') alert('Download failed: ' + result.message);
 }
 
+async function exportBackup() {
+    try {
+        const resp = await fetch('/api/backup');
+        const blob = await resp.blob();
+        const cd = resp.headers.get('Content-Disposition') || '';
+        const match = cd.match(/filename="([^"]+)"/);
+        const filename = match ? match[1] : 'cooperstation-backup.json';
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename; a.click();
+        URL.revokeObjectURL(url);
+    } catch (e) {
+        alert('Export failed: ' + e.message);
+    }
+}
+
+async function importBackup(input) {
+    const file = input.files[0];
+    if (!file) return;
+    input.value = '';
+    if (!confirm(`Import backup from "${file.name}"?\n\nThis will REPLACE all current stations and restore settings.`)) return;
+    const statusEl = document.getElementById('backupStatus');
+    statusEl.textContent = 'Restoring…';
+    statusEl.className = 'settings-status';
+    try {
+        const text = await file.text();
+        JSON.parse(text); // validate JSON before sending
+        const resp = await fetch('/api/restore', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: text
+        });
+        const result = await resp.json();
+        if (result.status === 'ok') {
+            statusEl.textContent = `✓ Restored ${result.stations} stations`;
+            statusEl.className = 'settings-status ok';
+            await loadSettings();
+        } else {
+            statusEl.textContent = '✗ ' + result.message;
+            statusEl.className = 'settings-status error';
+        }
+    } catch (e) {
+        statusEl.textContent = '✗ ' + (e.message.includes('JSON') ? 'Invalid backup file' : e.message);
+        statusEl.className = 'settings-status error';
+    }
+    setTimeout(() => { statusEl.textContent = ''; statusEl.className = ''; }, 5000);
+}
+
 async function loadSettings() {
     try {
         const [configResp, modelsResp] = await Promise.all([

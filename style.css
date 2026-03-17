@@ -583,6 +583,34 @@ button {
 .settings-status.ok    { color: #4CAF50; }
 .settings-status.error { color: #f44336; }
 
+.settings-hint {
+    margin: 0 0 12px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.backup-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+.backup-btn {
+    padding: 9px 18px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.15s;
+}
+
+.export-btn { background: #4caf50; color: #fff; }
+.export-btn:hover { background: #43a047; }
+.import-btn { background: #2196f3; color: #fff; }
+.import-btn:hover { background: #1e88e5; }
+
 /* ── Voice model management ────────────────────────────────────────────── */
 .model-browse-toggle {
     margin: 14px 0 0;
