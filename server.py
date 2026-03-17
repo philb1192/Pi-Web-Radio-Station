@@ -69,6 +69,7 @@ class RadioServer:
         self._preview_interrupted_station = None  # station to resume after preview stops
         self._voices_cache = None
         self._voices_cache_time = 0.0
+        self._play_lock = asyncio.Lock()  # prevents concurrent _play_current calls
 
         # Set initial volume
         self.audio_player.set_volume(self.state['volume'])
@@ -325,6 +326,10 @@ class RadioServer:
                         await self.broadcast_state()
                     continue
 
+                # Skip if a station transition is already in progress
+                if self._play_lock.locked():
+                    continue
+
                 # ── stream dropped ──────────────────────────────────────────
                 stations = self.state['stations']
                 current = self.state['current_station']
@@ -409,9 +414,9 @@ class RadioServer:
             if self.tts_queue.empty() and self._tts_interrupted_station:
                 station = self._tts_interrupted_station
                 self._tts_interrupted_station = None
-                await self._play_current(station['url'])
                 self.state['playing'] = True
                 await self.broadcast_state()
+                await self._play_current(station['url'])
             else:
                 await self.broadcast_state()  # update queue size in UI
 
@@ -425,11 +430,12 @@ class RadioServer:
         """Start mpv on the Pi with fade-out/in. No-op when routed to browser."""
         if self.state.get('audio_output', 'pi') != 'pi':
             return
-        if self.audio_player.is_playing():
-            await asyncio.to_thread(self.audio_player.fade_out)
-        success = await asyncio.to_thread(self.audio_player.play, url, True)
-        if success:
-            await asyncio.to_thread(self.audio_player.fade_in)
+        async with self._play_lock:
+            if self.audio_player.is_playing():
+                await asyncio.to_thread(self.audio_player.fade_out)
+            success = await asyncio.to_thread(self.audio_player.play, url, True)
+            if success:
+                await asyncio.to_thread(self.audio_player.fade_in)
 
     def _next_playable_station(self, station: dict) -> dict:
         """Return station if online/unknown. If it is known-offline, walk forward
@@ -506,32 +512,32 @@ class RadioServer:
                 self._clear_preview()
                 self.state['current_station'] = station
                 self.state['reconnect_status'] = None
-                await self._play_current(station['url'])
                 self.state['playing'] = True
                 self.save_playback_state()
+                await self._play_current(station['url'])
 
         elif action == 'pause':
             self._clear_preview()
-            await asyncio.to_thread(self.audio_player.stop_fade, True)
             self.state['playing'] = False
             self.state['reconnect_status'] = None
             self.save_playback_state()
+            await asyncio.to_thread(self.audio_player.stop_fade, True)
 
         elif action == 'toggle_play':
             if self.state['playing']:
                 self._clear_preview()
-                await asyncio.to_thread(self.audio_player.stop_fade, True)
                 self.state['playing'] = False
                 self.state['reconnect_status'] = None
                 self.save_playback_state()
+                await asyncio.to_thread(self.audio_player.stop_fade, True)
             else:
                 if self.state['current_station']:
                     self._clear_preview()
                     station = self._next_playable_station(self.state['current_station'])
                     self.state['current_station'] = station
-                    await self._play_current(station['url'])
                     self.state['playing'] = True
                     self.save_playback_state()
+                    await self._play_current(station['url'])
                 elif self.state['preview_station']:
                     # Stop preview if toggle_play pressed with no real station
                     self.audio_player.stop(release_spotify=True)
@@ -660,10 +666,10 @@ class RadioServer:
                 if station:
                     station = self._next_playable_station(station)
                     self.state['current_station'] = station
-                    await self._play_current(station['url'])
                     self.state['playing'] = True
                     self.save_playback_state()
                     await self.broadcast_state()
+                    await self._play_current(station['url'])
                     return web.json_response({'status': 'ok', 'playing': station['name']})
                 else:
                     return web.json_response({'status': 'error', 'message': 'Station not found'}, status=404)
@@ -671,7 +677,6 @@ class RadioServer:
             if self.state['current_station']:
                 station = self._next_playable_station(self.state['current_station'])
                 self.state['current_station'] = station
-                await self._play_current(station['url'])
                 self.state['playing'] = True
                 self.save_playback_state()
                 await self.broadcast_state()
@@ -683,10 +688,10 @@ class RadioServer:
     
     async def api_pause(self, request):
         """Pause playback"""
-        await asyncio.to_thread(self.audio_player.stop_fade, True)
         self.state['playing'] = False
         self.save_playback_state()
         await self.broadcast_state()
+        await asyncio.to_thread(self.audio_player.stop_fade, True)
         return web.json_response({'status': 'ok', 'playing': False})
     
     async def api_volume(self, request):
