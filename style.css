@@ -708,3 +708,50 @@ button {
     border-radius: 4px;
     font-size: 12px;
 }
+
+/* ── System Info panel ──────────────────────────────────────── */
+.sysinfo-grid { display: grid; gap: 10px; margin-top: 4px; }
+
+.sysinfo-row {
+    display: grid;
+    grid-template-columns: 80px 1fr 130px;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+}
+
+.sysinfo-label { color: var(--text-secondary); }
+
+.sysinfo-bar-wrap {
+    height: 6px;
+    background: var(--border-color);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.sysinfo-bar {
+    display: block;
+    height: 100%;
+    border-radius: 3px;
+    width: 0%;
+    transition: width 0.5s ease, background 0.5s ease;
+}
+
+.sysinfo-value {
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    text-align: right;
+    font-size: 12px;
+}
+
+.sysinfo-refresh {
+    cursor: pointer;
+    margin-left: 8px;
+    font-size: 15px;
+    opacity: 0.6;
+    display: inline-block;
+    transition: transform 0.3s ease;
+    user-select: none;
+}
+.sysinfo-refresh:hover { opacity: 1; transform: rotate(180deg); }

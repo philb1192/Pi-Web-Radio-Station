@@ -123,6 +123,37 @@
                 <button onclick="saveSettings()">Save Settings</button>
                 <span id="settingsSaveStatus"></span>
             </div>
+
+            <div class="settings-section">
+                <h4>System Info <span class="sysinfo-refresh" onclick="loadSysInfo()" title="Refresh">↻</span></h4>
+                <div class="sysinfo-grid">
+                    <div class="sysinfo-row">
+                        <span class="sysinfo-label">CPU Temp</span>
+                        <span class="sysinfo-bar-wrap"><span class="sysinfo-bar" id="sysinfoCpuBar"></span></span>
+                        <span class="sysinfo-value" id="sysinfoCpuTemp">—</span>
+                    </div>
+                    <div class="sysinfo-row">
+                        <span class="sysinfo-label">Memory</span>
+                        <span class="sysinfo-bar-wrap"><span class="sysinfo-bar" id="sysinfoMemBar"></span></span>
+                        <span class="sysinfo-value" id="sysinfoMem">—</span>
+                    </div>
+                    <div class="sysinfo-row">
+                        <span class="sysinfo-label">Disk</span>
+                        <span class="sysinfo-bar-wrap"><span class="sysinfo-bar" id="sysinfoDiskBar"></span></span>
+                        <span class="sysinfo-value" id="sysinfoDisk">—</span>
+                    </div>
+                    <div class="sysinfo-row">
+                        <span class="sysinfo-label">CPU Load</span>
+                        <span class="sysinfo-bar-wrap"></span>
+                        <span class="sysinfo-value" id="sysinfoLoad">—</span>
+                    </div>
+                    <div class="sysinfo-row">
+                        <span class="sysinfo-label">Uptime</span>
+                        <span class="sysinfo-bar-wrap"></span>
+                        <span class="sysinfo-value" id="sysinfoUptime">—</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div id="stationsTab" class="tab-content">

@@ -8,6 +8,7 @@ import asyncio
 import json
 import logging
 import re
+import shutil
 import subprocess
 from aiohttp import web
 from typing import Optional
@@ -984,6 +985,52 @@ class RadioServer:
         except Exception as e:
             return web.json_response({'status': 'error', 'message': str(e)}, status=500)
 
+    async def api_sysinfo(self, request):
+        """Return system stats: CPU temp, memory, disk, load, uptime."""
+        info = {}
+
+        try:
+            with open('/sys/class/thermal/thermal_zone0/temp') as f:
+                info['cpu_temp'] = round(int(f.read().strip()) / 1000, 1)
+        except Exception:
+            info['cpu_temp'] = None
+
+        try:
+            with open('/proc/uptime') as f:
+                info['uptime_seconds'] = int(float(f.read().split()[0]))
+        except Exception:
+            info['uptime_seconds'] = None
+
+        try:
+            mem = {}
+            with open('/proc/meminfo') as f:
+                for line in f:
+                    parts = line.split()
+                    if parts[0] in ('MemTotal:', 'MemAvailable:'):
+                        mem[parts[0]] = int(parts[1]) * 1024
+            info['mem_total'] = mem.get('MemTotal:')
+            info['mem_available'] = mem.get('MemAvailable:')
+            info['mem_used'] = info['mem_total'] - info['mem_available']
+            info['mem_percent'] = round(info['mem_used'] / info['mem_total'] * 100, 1)
+        except Exception:
+            info['mem_total'] = info['mem_available'] = info['mem_used'] = info['mem_percent'] = None
+
+        try:
+            disk = shutil.disk_usage('/')
+            info['disk_total'] = disk.total
+            info['disk_used'] = disk.used
+            info['disk_free'] = disk.free
+            info['disk_percent'] = round(disk.used / disk.total * 100, 1)
+        except Exception:
+            info['disk_total'] = info['disk_used'] = info['disk_free'] = info['disk_percent'] = None
+
+        try:
+            info['cpu_load'] = round(os.getloadavg()[0], 2)
+        except Exception:
+            info['cpu_load'] = None
+
+        return web.json_response(info)
+
     def _get_bluetooth_name(self) -> str:
         try:
             r = subprocess.run(['bluetoothctl', 'show'], capture_output=True, text=True, timeout=3)
@@ -1082,6 +1129,7 @@ def main():
     app.router.add_post('/api/stations/reorder', server.api_reorder_stations)
     app.router.add_post('/api/bluetooth', server.api_bluetooth)
     app.router.add_post('/api/spotify', server.api_spotify)
+    app.router.add_get('/api/sysinfo', server.api_sysinfo)
     app.router.add_get('/api/config', server.api_get_config)
     app.router.add_post('/api/config', server.api_save_config)
     app.router.add_get('/api/tts/models', server.api_tts_models)

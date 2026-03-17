@@ -1,0 +1,29 @@
+[Unit]
+Description=CooperStation Internet Radio
+Documentation=https://github.com/philb1192/Pi-Web-Radio-Station
+After=network-online.target sound.target bluetooth.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/radio-server
+ExecStart=/home/pi/radio-server/venv/bin/python3 /home/pi/radio-server/server.py
+Environment=HOME=/home/pi
+Environment=PATH=/home/pi/radio-server/venv/bin:/usr/local/bin:/usr/bin:/bin
+Environment=PYTHONUNBUFFERED=1
+
+# Always restart on any exit, with a 5s delay
+Restart=always
+RestartSec=5
+
+# Circuit breaker: stop restarting if it crashes 5 times in 2 minutes
+StartLimitIntervalSec=120
+StartLimitBurst=5
+
+# Log to journald — view with: journalctl -u radio-server -f
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

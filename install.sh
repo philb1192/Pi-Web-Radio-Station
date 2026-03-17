@@ -158,26 +158,16 @@ fi
 # ── 8. Systemd service ──────────────────────────────────────
 if [ "$INSTALL_SERVICE" -eq 1 ]; then
     info "Installing systemd service…"
-    sudo tee /etc/systemd/system/${SERVICE_NAME}.service > /dev/null <<EOF
-[Unit]
-Description=CooperStation Internet Radio
-After=network-online.target sound.target
-Wants=network-online.target
-
-[Service]
-User=$USER
-WorkingDirectory=$INSTALL_DIR
-ExecStart=$INSTALL_DIR/venv/bin/python3 $INSTALL_DIR/server.py
-Restart=on-failure
-RestartSec=5
-Environment=HOME=$HOME
-
-[Install]
-WantedBy=multi-user.target
-EOF
+    # Substitute paths from the repo's service template
+    sed \
+        -e "s|/home/pi/radio-server|$INSTALL_DIR|g" \
+        -e "s|User=pi|User=$USER|g" \
+        -e "s|Environment=HOME=/home/pi|Environment=HOME=$HOME|g" \
+        "$INSTALL_DIR/radio-server.service" \
+        | sudo tee /etc/systemd/system/${SERVICE_NAME}.service > /dev/null
     sudo systemctl daemon-reload
     sudo systemctl enable "$SERVICE_NAME"
-    sudo systemctl start "$SERVICE_NAME"
+    sudo systemctl restart "$SERVICE_NAME"
     success "Service installed and started."
 fi
 

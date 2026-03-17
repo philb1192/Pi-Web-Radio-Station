@@ -5,6 +5,7 @@ let ttsVolume = 50;
 let currentTab = 'tts';
 let activePreviewUrl = null;
 let activePreviewBtn = null;
+let sysinfoInterval = null;
 
 async function toggleAudioOutput() {
     const next = (state.audio_output || 'pi') === 'pi' ? 'browser' : 'pi';
@@ -46,6 +47,13 @@ function showTab(tabName) {
     const btns = document.querySelectorAll('.tab-btn');
     if (btns[idx]) btns[idx].classList.add('active');
     currentTab = tabName;
+
+    clearInterval(sysinfoInterval);
+    sysinfoInterval = null;
+    if (tabName === 'settings') {
+        loadSysInfo();
+        sysinfoInterval = setInterval(loadSysInfo, 15000);
+    }
 }
 
 function connect() {
@@ -744,6 +752,59 @@ async function saveSettings() {
         statusEl.className = 'settings-status error';
     }
     setTimeout(() => { statusEl.textContent = ''; statusEl.className = ''; }, 3000);
+}
+
+function _sysinfoBar(barId, pct) {
+    const bar = document.getElementById(barId);
+    if (!bar) return;
+    bar.style.width = Math.min(pct, 100) + '%';
+    bar.style.background = pct < 60 ? '#4caf50' : pct < 80 ? '#ff9800' : '#f44336';
+}
+
+function _formatBytes(bytes) {
+    if (bytes >= 1e9) return (bytes / 1e9).toFixed(1) + ' GB';
+    if (bytes >= 1e6) return (bytes / 1e6).toFixed(0) + ' MB';
+    return (bytes / 1e3).toFixed(0) + ' KB';
+}
+
+function _formatUptime(seconds) {
+    const d = Math.floor(seconds / 86400);
+    const h = Math.floor((seconds % 86400) / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const parts = [];
+    if (d) parts.push(d + 'd');
+    if (h) parts.push(h + 'h');
+    parts.push(m + 'm');
+    return parts.join(' ');
+}
+
+async function loadSysInfo() {
+    try {
+        const resp = await fetch('/api/sysinfo');
+        const info = await resp.json();
+
+        if (info.cpu_temp !== null) {
+            const pct = Math.round((info.cpu_temp / 85) * 100);
+            _sysinfoBar('sysinfoCpuBar', pct);
+            document.getElementById('sysinfoCpuTemp').textContent = info.cpu_temp + '°C';
+        }
+        if (info.mem_percent !== null) {
+            _sysinfoBar('sysinfoMemBar', info.mem_percent);
+            document.getElementById('sysinfoMem').textContent =
+                _formatBytes(info.mem_used) + ' / ' + _formatBytes(info.mem_total) + ' (' + info.mem_percent + '%)';
+        }
+        if (info.disk_percent !== null) {
+            _sysinfoBar('sysinfoDiskBar', info.disk_percent);
+            document.getElementById('sysinfoDisk').textContent =
+                _formatBytes(info.disk_used) + ' / ' + _formatBytes(info.disk_total) + ' (' + info.disk_percent + '%)';
+        }
+        if (info.cpu_load !== null)
+            document.getElementById('sysinfoLoad').textContent = info.cpu_load.toFixed(2);
+        if (info.uptime_seconds !== null)
+            document.getElementById('sysinfoUptime').textContent = _formatUptime(info.uptime_seconds);
+    } catch (e) {
+        console.error('Failed to load sysinfo:', e);
+    }
 }
 
 connect();
