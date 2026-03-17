@@ -53,6 +53,27 @@ Audio plays through the Pi's speakers. The web UI can be opened on any device on
 
 ## Installation
 
+### One-command install (recommended)
+
+```bash
+bash <(curl -sSL https://raw.githubusercontent.com/philb1192/Pi-Web-Radio-Station/main/install.sh)
+```
+
+The script will:
+- Install all system dependencies (`mpv`, `alsa-utils`, etc.)
+- Clone the repository
+- Set up the Python virtual environment
+- Copy default config files
+- Optionally install Piper TTS + a default voice model
+- Optionally install Spotify Connect (raspotify)
+- Optionally create a systemd service for auto-start on boot
+
+> **Tip:** In Raspberry Pi Imager's ⚙️ **Advanced Options**, pre-configure your Wi-Fi credentials and enable SSH — then you can run the install command on first boot without ever connecting a screen or keyboard.
+
+---
+
+### Manual install
+
 ### 1. Install system dependencies
 
 ```bash
