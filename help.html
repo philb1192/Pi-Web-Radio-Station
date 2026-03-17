@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CooperStation — User Guide</title>
+    <style>
+        :root {
+            --bg: #f4f6fb;
+            --surface: #ffffff;
+            --accent: #667eea;
+            --accent2: #764ba2;
+            --text: #2d2d2d;
+            --muted: #666;
+            --border: #e0e4f0;
+            --code-bg: #f0f3ff;
+            --tip-bg: #eef9ee;
+            --tip-border: #4CAF50;
+            --warn-bg: #fff8e8;
+            --warn-border: #ffb300;
+            --note-bg: #e8f0fe;
+            --note-border: #667eea;
+            --sidebar-w: 240px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+        }
+
+        /* ── Header ── */
+        .site-header {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+            color: white;
+            padding: 28px 32px 22px;
+        }
+        .site-header h1 { font-size: 1.8rem; margin-bottom: 4px; }
+        .site-header p  { opacity: 0.85; font-size: 0.95rem; }
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 14px;
+            color: rgba(255,255,255,0.85);
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        .back-btn:hover { color: white; }
+
+        /* ── Layout ── */
+        .layout {
+            display: flex;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 28px 16px;
+            gap: 28px;
+            align-items: flex-start;
+        }
+
+        /* ── Sidebar TOC ── */
+        .toc {
+            width: var(--sidebar-w);
+            flex-shrink: 0;
+            background: var(--surface);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 18px 16px;
+            position: sticky;
+            top: 20px;
+        }
+        .toc h3 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 10px; }
+        .toc ol  { list-style: none; padding: 0; }
+        .toc li  { margin: 4px 0; }
+        .toc a   { text-decoration: none; color: var(--muted); font-size: 0.87rem; display: block; padding: 3px 6px; border-radius: 5px; transition: all .15s; }
+        .toc a:hover   { background: var(--code-bg); color: var(--accent); }
+        .toc a.active  { background: var(--accent); color: white; }
+
+        /* ── Main content ── */
+        .content { flex: 1; min-width: 0; }
+
+        section {
+            background: var(--surface);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 28px 30px;
+            margin-bottom: 20px;
+            scroll-margin-top: 20px;
+        }
+
+        h2 {
+            font-size: 1.3rem;
+            color: var(--accent);
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        h3 { font-size: 1.05rem; color: var(--text); margin: 20px 0 8px; }
+        h4 { font-size: 0.95rem; color: var(--muted); margin: 14px 0 6px; font-weight: 600; }
+
+        p  { margin: 8px 0; }
+        ul, ol { margin: 8px 0 8px 22px; }
+        li { margin: 4px 0; }
+
+        code {
+            background: var(--code-bg);
+            color: var(--accent2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+            font-size: 0.87em;
+        }
+
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px 16px;
+            overflow-x: auto;
+            margin: 12px 0;
+        }
+        pre code { background: none; padding: 0; color: var(--text); font-size: 0.85em; }
+
+        .tip  { background: var(--tip-bg);  border-left: 4px solid var(--tip-border);  padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+        .warn { background: var(--warn-bg); border-left: 4px solid var(--warn-border); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+        .note { background: var(--note-bg); border-left: 4px solid var(--note-border); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+        .tip p, .warn p, .note p { margin: 4px 0; }
+        .tip strong  { color: #2e7d32; }
+        .warn strong { color: #e65100; }
+        .note strong { color: var(--accent); }
+
+        .badge {
+            display: inline-block;
+            font-size: 0.78rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+            vertical-align: middle;
+            margin: 0 2px;
+        }
+        .badge-green  { background: #4CAF50; color: white; }
+        .badge-grey   { background: #9e9e9e; color: white; }
+        .badge-red    { background: #f44336; color: white; }
+        .badge-blue   { background: var(--accent); color: white; }
+        .badge-orange { background: #ff9800; color: white; }
+        .badge-teal   { background: #00897b; color: white; }
+
+        table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.9rem; }
+        th { background: var(--code-bg); color: var(--text); font-weight: 600; text-align: left; padding: 8px 12px; border: 1px solid var(--border); }
+        td { padding: 7px 12px; border: 1px solid var(--border); vertical-align: top; }
+        tr:nth-child(even) td { background: #fafbff; }
+
+        .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; vertical-align: middle; margin-right: 4px; }
+        .dot-green  { background: #4CAF50; }
+        .dot-grey   { background: #bdbdbd; }
+        .dot-red    { background: #f44336; }
+
+        details { margin: 8px 0; }
+        summary { cursor: pointer; font-weight: 600; color: var(--accent); padding: 4px 0; user-select: none; }
+        details[open] summary { margin-bottom: 8px; }
+
+        hr { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+
+        /* ── Responsive ── */
+        @media (max-width: 720px) {
+            .toc { display: none; }
+            section { padding: 20px 16px; }
+            .layout { padding: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="site-header">
+    <a class="back-btn" href="/">← Back to Radio</a>
+    <h1>🎵 CooperStation — User Guide</h1>
+    <p>Everything you need to know about your Internet Radio Player</p>
+</div>
+
+<div class="layout">
+
+    <!-- Sidebar TOC -->
+    <nav class="toc">
+        <h3>Contents</h3>
+        <ol>
+            <li><a href="#quickstart">1. Quick Start</a></li>
+            <li><a href="#controls">2. Main Controls</a></li>
+            <li><a href="#output">3. Audio Output</a></li>
+            <li><a href="#stations">4. Stations</a></li>
+            <li><a href="#directory">5. Online Directory</a></li>
+            <li><a href="#watchdog">6. Auto-Reconnect</a></li>
+            <li><a href="#tts">7. Text-to-Speech</a></li>
+            <li><a href="#bluetooth">8. Bluetooth</a></li>
+            <li><a href="#spotify">9. Spotify Connect</a></li>
+            <li><a href="#settings">10. Settings</a></li>
+            <li><a href="#theme">11. Theme</a></li>
+            <li><a href="#api">12. REST API</a></li>
+            <li><a href="#tips">13. Tips &amp; Tricks</a></li>
+        </ol>
+    </nav>
+
+    <!-- Main content -->
+    <main class="content">
+
+        <!-- 1. Quick Start -->
+        <section id="quickstart">
+            <h2>1. Quick Start</h2>
+            <p>Open the web interface in any browser on your local network:</p>
+            <pre><code>http://&lt;raspberry-pi-ip&gt;:8080</code></pre>
+            <p>You should see the radio player with your saved stations. Click any station row to start playing, or use the big <strong>▶ Play</strong> button.</p>
+            <div class="tip">
+                <p><strong>Tip:</strong> Bookmark the page so you can return quickly. On mobile, you can use <em>Add to Home Screen</em> to get an app-like shortcut.</p>
+            </div>
+        </section>
+
+        <!-- 2. Main Controls -->
+        <section id="controls">
+            <h2>2. Main Controls</h2>
+
+            <h3>▶ Play / ⏸ Pause</h3>
+            <p>The large button below the <em>Now Playing</em> card toggles playback. It is disabled until a station is selected.</p>
+
+            <h3>Volume Slider</h3>
+            <p>Drag the slider to set the volume from 0 to 100 %. Changes are applied instantly (debounced by 300 ms to avoid flooding the server).</p>
+            <ul>
+                <li>In <strong>Pi mode</strong> — controls the ALSA mixer on the Raspberry Pi.</li>
+                <li>In <strong>Browser mode</strong> — controls the browser's audio element directly.</li>
+            </ul>
+
+            <h3>🔊 Mute / 🔇 Unmute</h3>
+            <p>Silences audio without stopping the stream. The volume slider position is remembered so unmuting restores the previous level.</p>
+
+            <h3>Now Playing Card</h3>
+            <p>Shows the current station name. Below it:</p>
+            <ul>
+                <li><strong>Stream metadata</strong> — artist / track title sent by the station (when available).</li>
+                <li><strong>Reconnect status</strong> — appears in amber when the player is trying to recover a dropped stream.</li>
+            </ul>
+
+            <h3>Status Bars</h3>
+            <table>
+                <tr><th>Bar</th><th>Meaning</th></tr>
+                <tr><td>Green connection bar</td><td>WebSocket is connected to the server.</td></tr>
+                <tr><td>📱 Bluetooth bar</td><td>A phone is connected via Bluetooth. Shows idle timer if no audio is streaming.</td></tr>
+                <tr><td>▶ Spotify bar</td><td>Spotify Connect is active. Shows track and artist name.</td></tr>
+            </table>
+        </section>
+
+        <!-- 3. Audio Output -->
+        <section id="output">
+            <h2>3. Audio Output Toggle</h2>
+            <p>The <span class="badge badge-blue">🔊 Pi</span> / <span class="badge badge-teal">🖥 Browser</span> button in the top-right corner switches where audio plays.</p>
+
+            <h3>🔊 Pi Mode (default)</h3>
+            <p>Audio plays through the Raspberry Pi's physical speakers or headphone jack via ALSA / mpv. Best for always-on playback — you can close the browser and music keeps playing.</p>
+
+            <h3>🖥 Browser Mode</h3>
+            <p>Audio streams directly into your browser's audio engine. The Pi's mpv process is stopped. Useful when you want to hear the radio on your laptop or phone.</p>
+            <ul>
+                <li>Closing the browser tab stops playback.</li>
+                <li>The volume slider controls the browser's native audio volume.</li>
+                <li>The stream watchdog is disabled in this mode (the Pi cannot monitor browser-side audio).</li>
+                <li>TTS also plays in the browser in this mode.</li>
+            </ul>
+            <div class="tip">
+                <p><strong>Tip:</strong> Set <em>Default Audio Output</em> in <strong>Settings</strong> so your preferred mode is restored after a reboot.</p>
+            </div>
+        </section>
+
+        <!-- 4. Stations -->
+        <section id="stations">
+            <h2>4. Stations</h2>
+            <p>Open the <strong>📻 Stations</strong> tab to manage your station list.</p>
+
+            <h3>Health Dots</h3>
+            <p>Each station has a small coloured dot:</p>
+            <ul>
+                <li><span class="dot dot-green"></span><strong>Green</strong> — station is reachable (checked via TCP every 5 minutes).</li>
+                <li><span class="dot dot-grey"></span><strong>Grey</strong> — not yet checked (first check happens 10 s after startup).</li>
+                <li><span class="dot dot-red"></span><strong>Red</strong> — station is unreachable. Clicking it will skip to the next available station.</li>
+            </ul>
+
+            <h3>Playing a Station</h3>
+            <p>Click anywhere on a station row (except the buttons) to select and play it. The active station is highlighted in purple.</p>
+
+            <h3>⭐ Default Station</h3>
+            <p>Click the star icon to mark a station as the default. The default station is pre-selected when the page loads. Click the star again to remove the default.</p>
+
+            <h3>↑ ↓ Reorder</h3>
+            <p>Use the arrow buttons on each row to move a station up or down in the list. Order is persisted to <code>stations.json</code>.</p>
+
+            <h3>Delete</h3>
+            <p>Removes the station permanently. If it was playing, playback stops.</p>
+
+            <h3>Adding a Station Manually</h3>
+            <p>Scroll to the <em>Add New Station</em> form at the bottom of the Stations tab. Enter a name and the direct stream URL (must be an HTTP/HTTPS audio stream), then click <strong>Add Station</strong>.</p>
+            <div class="note">
+                <p><strong>Note:</strong> Common stream URL formats: <code>.mp3</code>, <code>.aac</code>, <code>.ogg</code>, or a plain HTTP endpoint that returns audio data.</p>
+            </div>
+        </section>
+
+        <!-- 5. Directory -->
+        <section id="directory">
+            <h2>5. Online Station Directory</h2>
+            <p>The <em>Search Online Directory</em> panel (inside the Stations tab) connects to the free <strong>Radio Browser</strong> public API to search ~30 000 internet radio stations.</p>
+
+            <h3>Searching</h3>
+            <p>Type a station name, genre, or country and press <strong>Enter</strong> or click <strong>Search</strong>. Results are sorted by listener votes and show codec/bitrate metadata.</p>
+
+            <h3><span class="badge badge-orange">▶ Preview</span> a Station</h3>
+            <p>Click <strong>▶ Preview</strong> to audition a station directly in your browser without adding it to your list. The button turns red (<strong>■ Stop</strong>) while previewing. Clicking Preview on a second result stops the first automatically.</p>
+            <div class="tip">
+                <p><strong>Tip:</strong> Preview always plays in the browser regardless of the Pi/Browser output toggle — so you can preview while the Pi continues playing your current station.</p>
+            </div>
+
+            <h3><span class="badge badge-green">Add</span> a Station</h3>
+            <p>Click <strong>Add</strong> on any result to permanently add it to your station list. The button shows <em>Added</em> and is disabled after clicking.</p>
+        </section>
+
+        <!-- 6. Watchdog -->
+        <section id="watchdog">
+            <h2>6. Auto-Reconnect (Stream Watchdog)</h2>
+            <p>The server polls the current stream every 5 seconds. If the stream drops unexpectedly:</p>
+            <ol>
+                <li>It retries the <strong>same station up to 3 times</strong>. An amber message appears in the Now Playing card.</li>
+                <li>If all retries fail, it moves to the <strong>next station</strong> in your list (skipping any already known to be offline based on the health check).</li>
+                <li>If every station fails, playback stops completely.</li>
+            </ol>
+            <div class="note">
+                <p><strong>Note:</strong> The watchdog is inactive in Browser mode — the browser manages its own audio buffering.</p>
+            </div>
+        </section>
+
+        <!-- 7. TTS -->
+        <section id="tts">
+            <h2>7. Text-to-Speech</h2>
+            <p>The <strong>🎙️ TTS</strong> tab lets you synthesise speech using the <a href="https://github.com/rhasspy/piper" target="_blank">Piper</a> TTS engine installed on the Pi.</p>
+
+            <h3>Sending a Message</h3>
+            <ol>
+                <li>Type your text in the textarea.</li>
+                <li>Adjust the <strong>TTS Volume</strong> slider (0–100 %).</li>
+                <li>Click <strong>Speak</strong>.</li>
+            </ol>
+
+            <h3>Queue Behaviour</h3>
+            <p>Messages are processed one at a time:</p>
+            <ul>
+                <li><strong>Pi mode:</strong> The radio stream is paused while speech plays. Once the queue is empty, the stream resumes automatically.</li>
+                <li><strong>Browser mode:</strong> Speech audio is synthesised on the Pi and returned as a WAV file played in your browser. Multiple messages queue client-side and play sequentially without interrupting the Pi's audio.</li>
+            </ul>
+            <p>A <em>"N messages queued"</em> counter appears next to the Speak button while the queue is non-empty.</p>
+
+            <h3>TTS Volume vs. Main Volume</h3>
+            <p>These are independent. TTS volume is set in the TTS tab and in Settings. Main volume controls the radio stream.</p>
+
+            <div class="tip">
+                <p><strong>Tip:</strong> Use the REST API (<code>POST /api/speak</code>) to trigger announcements from Node-RED, Home Assistant, or a cron job — perfect for reminders or door announcements.</p>
+            </div>
+        </section>
+
+        <!-- 8. Bluetooth -->
+        <section id="bluetooth">
+            <h2>8. Bluetooth</h2>
+            <p>CooperStation acts as a Bluetooth A2DP sink — your phone can connect to it like a Bluetooth speaker.</p>
+
+            <h3>Pairing</h3>
+            <ol>
+                <li>On your phone, go to Bluetooth settings and scan for devices.</li>
+                <li>Select <strong>CooperStation</strong>.</li>
+                <li>Accept the pairing on both devices (no PIN required — the agent auto-accepts).</li>
+            </ol>
+            <p>Once paired, the device is automatically trusted so future connections require no confirmation.</p>
+
+            <h3>Status Bar</h3>
+            <p>When a phone is connected the blue 📱 bar shows the device name and connection state:</p>
+            <ul>
+                <li><em>streaming</em> — audio is actively playing from the phone.</li>
+                <li><em>idle N min — auto-off in M min</em> — connected but silent; will auto-disconnect after the idle timeout.</li>
+            </ul>
+
+            <div class="warn">
+                <p><strong>Note:</strong> Bluetooth audio and radio/Spotify share the same ALSA device. If Spotify or the radio is playing and you connect a phone, audio will mix. Pause the radio first if needed.</p>
+            </div>
+        </section>
+
+        <!-- 9. Spotify -->
+        <section id="spotify">
+            <h2>9. Spotify Connect</h2>
+            <p><strong>CooperStation</strong> appears as a Spotify Connect speaker inside the Spotify app on any device on the same network (or your Spotify account).</p>
+
+            <h3>Using It</h3>
+            <ol>
+                <li>Open Spotify on your phone or computer.</li>
+                <li>Tap the <strong>Connect</strong> icon (bottom of player) and select <strong>CooperStation</strong>.</li>
+                <li>Press Play — audio comes out of the Pi's speaker.</li>
+            </ol>
+
+            <h3>Status Bar</h3>
+            <p>The green ▶ bar below the connection status shows the current Spotify track and artist. It disappears when Spotify is inactive.</p>
+
+            <h3>ALSA Conflict Prevention</h3>
+            <p>When you start the radio while Spotify is playing, raspotify is automatically stopped so both don't fight over the sound card. When the radio stops, raspotify is restarted automatically.</p>
+
+            <div class="tip">
+                <p><strong>Tip:</strong> Use Spotify Connect for music you want to control from your phone, and the radio player for background streams you want to run hands-free.</p>
+            </div>
+        </section>
+
+        <!-- 10. Settings -->
+        <section id="settings">
+            <h2>10. Settings</h2>
+            <p>Open the <strong>⚙️ Settings</strong> tab to configure defaults that survive reboots.</p>
+
+            <h3>Playback</h3>
+            <table>
+                <tr><th>Setting</th><th>Description</th></tr>
+                <tr><td>Default Volume</td><td>Volume level applied on server startup (0–100 %).</td></tr>
+                <tr><td>Default Audio Output</td><td>Whether to start in Pi mode or Browser mode after a reboot.</td></tr>
+            </table>
+
+            <h3>Text-to-Speech</h3>
+            <table>
+                <tr><th>Setting</th><th>Description</th></tr>
+                <tr><td>Default TTS Volume</td><td>Pre-fills the TTS volume slider on every page load.</td></tr>
+                <tr><td>Active Voice Model</td><td>The Piper <code>.onnx</code> model used for speech synthesis.</td></tr>
+            </table>
+
+            <h3>Voice Models</h3>
+            <p>The <em>Voice Models</em> section lets you manage installed models:</p>
+            <ul>
+                <li>The <span class="badge badge-blue">Active</span> badge marks the currently selected model.</li>
+                <li>Click <strong>Delete</strong> to remove a model (you must switch to another model first).</li>
+                <li>Click <strong>Download Models ▾</strong> to browse the full Piper voice catalogue (~150 voices).</li>
+            </ul>
+
+            <h4>Downloading a New Voice</h4>
+            <ol>
+                <li>Open the <em>Download Models</em> panel.</li>
+                <li>Filter by language or name using the search box.</li>
+                <li>Click <span class="badge badge-green">Download</span> next to any model.</li>
+                <li>A progress bar appears. The download runs in the background — you can keep using the radio.</li>
+                <li>Once complete, the model appears in the <em>Active Voice Model</em> dropdown.</li>
+            </ol>
+
+            <div class="note">
+                <p><strong>Note:</strong> Models range from ~30 MB (x_low) to ~200 MB (high). Higher quality requires more CPU on the Pi. The <em>low</em> quality is a good balance.</p>
+            </div>
+
+            <h3>Saving Settings</h3>
+            <p>Click <strong>Save Settings</strong>. Changes are written to <code>config.json</code> and applied immediately — no restart required. Default volume also sets the current volume right away.</p>
+        </section>
+
+        <!-- 11. Theme -->
+        <section id="theme">
+            <h2>11. Dark / Light Theme</h2>
+            <p>Click the <strong>🌙</strong> / <strong>☀️</strong> button in the top-right corner to toggle between dark and light themes. Your preference is saved in <code>localStorage</code> and restored on every visit, including preventing a white flash on load.</p>
+        </section>
+
+        <!-- 12. API -->
+        <section id="api">
+            <h2>12. REST API</h2>
+            <p>Every feature is available over HTTP — ideal for Home Assistant, Node-RED, or shell scripts.</p>
+
+            <h3>Endpoints</h3>
+            <table>
+                <tr><th>Method</th><th>Path</th><th>Body / Params</th><th>Description</th></tr>
+                <tr><td>GET</td><td><code>/api/status</code></td><td>—</td><td>Full server state as JSON</td></tr>
+                <tr><td>POST</td><td><code>/api/play</code></td><td><code>{"station_id": 1}</code></td><td>Play a station by ID</td></tr>
+                <tr><td>POST</td><td><code>/api/pause</code></td><td>—</td><td>Stop playback</td></tr>
+                <tr><td>POST</td><td><code>/api/volume</code></td><td><code>{"volume": 0.75}</code></td><td>Set volume (0.0–1.0)</td></tr>
+                <tr><td>POST</td><td><code>/api/speak</code></td><td><code>{"text": "Hello", "volume": 70}</code></td><td>Queue a TTS message (Pi output)</td></tr>
+                <tr><td>POST</td><td><code>/api/audio-output</code></td><td><code>{"output": "pi"}</code></td><td>Switch audio output (<code>pi</code> or <code>browser</code>)</td></tr>
+                <tr><td>GET</td><td><code>/api/config</code></td><td>—</td><td>Read saved settings</td></tr>
+                <tr><td>POST</td><td><code>/api/config</code></td><td>settings object</td><td>Save settings</td></tr>
+                <tr><td>GET</td><td><code>/api/export</code></td><td>—</td><td>Download stations as JSON</td></tr>
+                <tr><td>POST</td><td><code>/api/import</code></td><td>stations array</td><td>Bulk-import stations</td></tr>
+                <tr><td>GET</td><td><code>/api/directory/search?q=jazz</code></td><td>—</td><td>Search Radio Browser</td></tr>
+            </table>
+
+            <h3>WebSocket</h3>
+            <p>Connect to <code>ws://&lt;pi-ip&gt;:8080/ws</code> to receive real-time state updates as JSON (<code>{"type":"state_update","state":{…}}</code>) and send actions:</p>
+            <pre><code>// Play a station
+{"action": "play", "station_id": 2}
+
+// Toggle play/pause
+{"action": "toggle_play"}
+
+// Set volume
+{"action": "set_volume", "volume": 0.6}
+
+// Add a station
+{"action": "add_station", "name": "My Station", "url": "http://…"}</code></pre>
+
+            <h3>Example — curl</h3>
+            <pre><code># Speak a message
+curl -X POST http://192.168.1.x:8080/api/speak \
+     -H "Content-Type: application/json" \
+     -d '{"text": "Dinner is ready!", "volume": 80}'
+
+# Switch to station 3
+curl -X POST http://192.168.1.x:8080/api/play \
+     -H "Content-Type: application/json" \
+     -d '{"station_id": 3}'</code></pre>
+        </section>
+
+        <!-- 13. Tips -->
+        <section id="tips">
+            <h2>13. Tips &amp; Tricks</h2>
+
+            <details open>
+                <summary>Auto-resume after power outage</summary>
+                <p>The server saves playback state to <code>playback_state.json</code> on every play/pause action. If the Pi loses power and reboots, the radio automatically resumes the last-playing station. No action required.</p>
+            </details>
+
+            <details>
+                <summary>Play a specific station on boot</summary>
+                <p>Star a station (⭐) to make it the default. It will be pre-selected on page load. For true auto-play on boot, make sure the radio was playing when the Pi last shut down — the reboot-resume feature handles the rest.</p>
+            </details>
+
+            <details>
+                <summary>Use TTS for home announcements</summary>
+                <p>Add this to a cron job or Home Assistant automation:</p>
+                <pre><code>curl -X POST http://&lt;pi&gt;:8080/api/speak \
+     -H "Content-Type: application/json" \
+     -d '{"text": "It is now 7 AM.", "volume": 60}'</code></pre>
+                <p>The radio pauses, speaks, then resumes automatically.</p>
+            </details>
+
+            <details>
+                <summary>Finding stream URLs</summary>
+                <p>Use the built-in <strong>Online Directory</strong> search first. If you need a specific station not in the directory:</p>
+                <ul>
+                    <li>Check the station's website for a "Listen Live" or "Stream" link.</li>
+                    <li>Use browser DevTools (Network tab) and look for audio streams while the station's player loads.</li>
+                    <li>Sites like <a href="https://www.radio-browser.info" target="_blank">radio-browser.info</a> list thousands of verified stream URLs.</li>
+                </ul>
+            </details>
+
+            <details>
+                <summary>Improving audio quality</summary>
+                <ul>
+                    <li>Prefer stations with <strong>AAC 128+ kbps</strong> or <strong>MP3 192+ kbps</strong> streams.</li>
+                    <li>Download a <strong>medium</strong> or <strong>high</strong> quality Piper voice model for better TTS.</li>
+                    <li>For Spotify, the config uses 320 kbps — no changes needed.</li>
+                </ul>
+            </details>
+
+            <details>
+                <summary>Accessing from outside your home network</summary>
+                <p>The server runs on port 8080 with no authentication. Only expose it on your local network. For remote access, use a VPN (WireGuard or Tailscale) rather than port-forwarding directly to the internet.</p>
+            </details>
+
+            <details>
+                <summary>Keyboard shortcuts (browser)</summary>
+                <p>No native shortcuts are built in, but you can use browser extensions or bookmarklets. For example, a bookmarklet to toggle play:</p>
+                <pre><code>javascript:fetch('/api/play',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})</code></pre>
+            </details>
+
+            <details>
+                <summary>Server log location</summary>
+                <p>When started manually, logs go to stdout. When started via systemd, use:</p>
+                <pre><code>journalctl -u radio-server -f</code></pre>
+                <p>Or check <code>/tmp/radio.log</code> if launched with the start script.</p>
+            </details>
+
+            <hr>
+            <p style="text-align:center; color: var(--muted); font-size: 0.85rem; margin-top: 12px;">
+                CooperStation · Raspberry Pi Internet Radio · Built with aiohttp + mpv + Piper TTS
+            </p>
+        </section>
+
+    </main>
+</div>
+
+<script>
+    // Highlight active TOC entry on scroll
+    const sections = document.querySelectorAll('section[id]');
+    const links = document.querySelectorAll('.toc a');
+    const observer = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+            if (e.isIntersecting) {
+                links.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + e.target.id));
+            }
+        });
+    }, { threshold: 0.35 });
+    sections.forEach(s => observer.observe(s));
+</script>
+
+</body>
+</html>

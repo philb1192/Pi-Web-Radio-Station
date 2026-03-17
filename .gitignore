@@ -1,0 +1,22 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Runtime state (user-specific, auto-generated)
+stations.json
+config.json
+playback_state.json
+
+# Piper TTS binary and voice models (install separately, see README)
+piper/
+
+# Logs
+*.log
+nohup.out
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,7 @@
+{
+  "default_station_id": 1,
+  "default_volume": 0.85,
+  "default_audio_output": "pi",
+  "default_tts_volume": 50,
+  "default_tts_model": ""
+}

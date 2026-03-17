@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Internet Radio Player</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/style.css">
+    <script>
+        // Apply saved theme before render to prevent flash
+        (function() {
+            if (localStorage.getItem('theme') === 'dark')
+                document.documentElement.setAttribute('data-theme', 'dark');
+        })();
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h1>🎵 Internet Radio</h1>
+            <div style="display:flex; gap:8px;">
+                <button class="api-btn output-btn" id="outputBtn" onclick="toggleAudioOutput()" title="Audio: Pi speakers — click to switch to browser">🔊 Pi</button>
+                <button class="api-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle dark/light theme">🌙</button>
+                <a class="api-btn" href="/help" target="_blank" title="User guide">❓</a>
+                <button class="api-btn" onclick="toggleApiInfo()">📡 API</button>
+            </div>
+        </div>
+        
+        <!-- API Info Modal -->
+        <div id="apiModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="toggleApiInfo()">&times;</span>
+                <h3>📡 REST API</h3>
+                <p>Control from Node-RED or Home Assistant:</p>
+                <div class="api-endpoints">
+                    <p><code>GET /api/status</code> - Get current state</p>
+                    <p><code>POST /api/play</code> - Play station (body: {"station_id": 1})</p>
+                    <p><code>POST /api/pause</code> - Pause playback</p>
+                    <p><code>POST /api/volume</code> - Set volume (body: {"volume": 0.9})</p>
+                    <p><code>POST /api/speak</code> - Text-to-speech (body: {"text": "Hello", "volume": 50})</p>
+                    <p style="margin-top: 10px; font-size: 13px; color: #666;">Note: TTS volume range is 0-100</p>
+                </div>
+            </div>
+        </div>
+        
+        <div id="status" class="status disconnected">Connecting...</div>
+        <div id="btStatus" style="display:none; margin:6px 0; padding:6px 12px; border-radius:6px; font-size:0.85em; background:#1a2e1a; color:#6fcf6f; border:1px solid #2d5a2d;"></div>
+        <div id="spotifyStatus" style="display:none; margin:6px 0; padding:6px 12px; border-radius:6px; font-size:0.85em; background:#0d1f12; color:#1DB954; border:1px solid #1a3d22;"></div>
+        
+        <div class="now-playing">
+            <small>Now Playing</small>
+            <h2 id="nowPlaying">No station selected</h2>
+            <p id="nowMeta" style="margin:4px 0 0; font-size:0.9em; color:#aaa; display:none;"></p>
+            <p id="reconnectStatus" style="margin:6px 0 0; font-size:0.85em; color:#e6a817; display:none;"></p>
+        </div>
+        
+        <div class="controls">
+            <button class="play-btn" id="playBtn" disabled>▶ Play</button>
+        </div>
+        
+        <div class="volume-control">
+            <label>Volume: <span id="volumeValue">90%</span></label>
+            <input type="range" id="volume" min="0" max="100" value="90">
+            <button id="muteBtn">🔊 Mute</button>
+        </div>
+        
+        <div class="tab-buttons">
+            <button class="tab-btn active" onclick="showTab('tts')">🎙️ TTS</button>
+            <button class="tab-btn" onclick="showTab('stations')">📻 Stations</button>
+            <button class="tab-btn" onclick="showTab('settings')">⚙️ Settings</button>
+        </div>
+        
+        <div id="ttsTab" class="tab-content active">
+            <div class="tts-section">
+                <textarea id="ttsText" placeholder="Enter text to speak..."></textarea>
+                <div style="margin-bottom: 10px;">
+                    <label>TTS Volume: <span id="ttsVolumeValue">50%</span></label>
+                    <input type="range" id="ttsVolume" min="0" max="100" value="50">
+                </div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <button onclick="speakText()">Speak</button>
+                    <span id="ttsQueueInfo" style="display:none; font-size:0.85em; color:#aaa;"></span>
+                </div>
+            </div>
+        </div>
+        
+        <div id="settingsTab" class="tab-content">
+            <div class="settings-section">
+                <h4>Playback</h4>
+                <div class="setting-row">
+                    <label>Default Volume <span class="setting-value" id="settingVolumeValue">85%</span></label>
+                    <input type="range" id="settingVolume" min="0" max="100" value="85"
+                           oninput="document.getElementById('settingVolumeValue').textContent = this.value + '%'">
+                </div>
+                <div class="setting-row">
+                    <label>Default Audio Output</label>
+                    <select id="settingAudioOutput">
+                        <option value="pi">🔊 Pi (speakers)</option>
+                        <option value="browser">🖥 Browser</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h4>Text-to-Speech</h4>
+                <div class="setting-row">
+                    <label>Default TTS Volume <span class="setting-value" id="settingTtsVolumeValue">50%</span></label>
+                    <input type="range" id="settingTtsVolume" min="0" max="100" value="50"
+                           oninput="document.getElementById('settingTtsVolumeValue').textContent = this.value + '%'">
+                </div>
+                <div class="setting-row">
+                    <label>Active Voice Model</label>
+                    <select id="settingTtsModel"></select>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h4>Voice Models</h4>
+                <div id="installedModelsList"></div>
+                <h5 class="model-browse-toggle" onclick="toggleModelBrowser()" id="modelBrowserToggle">
+                    Download Models <span id="modelBrowserArrow">▾</span>
+                </h5>
+                <div id="modelBrowserPanel" style="display:none;">
+                    <input type="text" id="modelSearchInput" class="model-search-input"
+                           placeholder="Filter by language or name…" oninput="filterAvailableModels()">
+                    <div id="availableModelsList"></div>
+                </div>
+            </div>
+
+            <div class="settings-actions">
+                <button onclick="saveSettings()">Save Settings</button>
+                <span id="settingsSaveStatus"></span>
+            </div>
+        </div>
+
+        <div id="stationsTab" class="tab-content">
+            <h3>Stations</h3>
+            <div id="stations"></div>
+            
+            <div class="directory-search">
+                <h4 class="directory-toggle" onclick="toggleDirectory()">
+                    Search Online Directory <span id="directoryArrow">▾</span>
+                </h4>
+                <div id="directoryPanel" style="display:none;">
+                    <div class="directory-input-row">
+                        <input type="text" id="directoryQuery" placeholder="Station name, genre, country…" onkeydown="if(event.key==='Enter') searchDirectory()">
+                        <button onclick="searchDirectory()" id="directorySearchBtn">Search</button>
+                    </div>
+                    <div id="directoryResults"></div>
+                </div>
+            </div>
+
+            <div class="add-station">
+                <h4>Add New Station</h4>
+                <input type="text" id="stationName" placeholder="Station Name">
+                <input type="text" id="stationUrl" placeholder="Stream URL">
+                <button onclick="addStation()">Add Station</button>
+            </div>
+        </div>
+    </div>
+    
+    <audio id="browserAudio" style="display:none;"></audio>
+    <audio id="previewAudio" style="display:none;"></audio>
+    <script src="/script.js"></script>
+</body>
+</html>

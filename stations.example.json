@@ -1,0 +1,6 @@
+[
+  {"id": 1, "name": "BBC World Service", "url": "http://stream.live.vc.bbcmedia.co.uk/bbc_world_service"},
+  {"id": 2, "name": "KEXP 90.3 Seattle", "url": "http://live-aacplus-64.kexp.org/kexp64.aac"},
+  {"id": 3, "name": "Jazz24 (Seattle)", "url": "http://live.jazz24.org/jazz24"},
+  {"id": 4, "name": "Classic FM (UK)", "url": "http://media-ice.musicradio.com/ClassicFMMP3"}
+]
