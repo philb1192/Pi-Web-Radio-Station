@@ -41,7 +41,7 @@ class TTSEngine:
                     self.piper_path = path
                     logger.info(f"Found piper at: {path}")
                     break
-            except:
+            except Exception:
                 continue
         
         # Auto-detect voice model
@@ -156,9 +156,9 @@ class TTSEngine:
                     )
                     if result.returncode == 0:
                         volume_set = True
-                except:
+                except Exception:
                     pass
-                
+
                 if not volume_set:
                     # Try Master if PCM doesn't work
                     try:
@@ -167,7 +167,7 @@ class TTSEngine:
                             capture_output=True,
                             timeout=2
                         )
-                    except:
+                    except Exception:
                         logger.warning("Could not set volume via amixer")
                 
                 # Play the generated WAV file using aplay
@@ -199,14 +199,14 @@ class TTSEngine:
                             capture_output=True,
                             timeout=2
                         )
-                    except:
+                    except Exception:
                         try:
                             subprocess.run(
                                 ['amixer', 'sset', 'Master', f'{original_volume}%'],
                                 capture_output=True,
                                 timeout=2
                             )
-                        except:
+                        except Exception:
                             logger.warning("Could not restore original volume")
             
             return True

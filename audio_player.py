@@ -59,15 +59,21 @@ class AudioPlayer:
 
     def _mpv_send(self, cmd: list) -> bool:
         """Send a JSON command to mpv via IPC socket. Returns True on success."""
+        s = None
         try:
             s = _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM)
             s.settimeout(0.5)
             s.connect(self.IPC_SOCKET)
             s.sendall((json.dumps({"command": cmd}) + '\n').encode())
-            s.close()
             return True
         except Exception:
             return False
+        finally:
+            if s:
+                try:
+                    s.close()
+                except Exception:
+                    pass
 
     def _mpv_set_vol(self, percent: int):
         """Set mpv's internal software volume (0–100) via IPC."""
@@ -163,9 +169,13 @@ class AudioPlayer:
                 self.process.terminate()
                 self.process.wait(timeout=2)
             except Exception:
-                self.process.kill()
-            self.process = None
-            self.current_url = None
+                try:
+                    self.process.kill()
+                except Exception:
+                    pass
+            finally:
+                self.process = None
+                self.current_url = None
             logger.info("Stopped playback")
         if release_spotify and self._stopped_spotify:
             self._stopped_spotify = False

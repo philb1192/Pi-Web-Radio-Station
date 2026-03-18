@@ -6,6 +6,9 @@ let currentTab = 'tts';
 let activePreviewUrl = null;
 let activePreviewBtn = null;
 let sysinfoInterval = null;
+let prevDownloadKeys = [];
+let availableModels = [];
+let modelBrowserOpen = false;
 
 async function toggleAudioOutput() {
     const next = (state.audio_output || 'pi') === 'pi' ? 'browser' : 'pi';
@@ -57,7 +60,8 @@ function showTab(tabName) {
 }
 
 function connect() {
-    ws = new WebSocket(`ws://${window.location.host}/ws`);
+    const wsProto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    ws = new WebSocket(`${wsProto}//${window.location.host}/ws`);
     
     ws.onopen = () => {
         document.getElementById('status').textContent = 'Connected to Radio Server';
@@ -161,7 +165,7 @@ function updateState(newState) {
     }
 
     document.getElementById('volume').value = state.volume * 100;
-    document.getElementById('volumeValue').textContent = Math.round(state.volume * 100) + '%';
+    document.getElementById('volumeValue').textContent = Math.min(100, Math.round(state.volume * 100)) + '%';
     document.getElementById('muteBtn').textContent = state.muted ? '🔇 Unmute' : '🔊 Mute';
     
     // Sync preview button if audio ended (e.g. stream dropped)
@@ -252,7 +256,7 @@ function updateState(newState) {
 }
 
 function send(data) {
-    if (ws.readyState === WebSocket.OPEN) {
+    if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify(data));
     }
 }
@@ -563,9 +567,6 @@ document.getElementById('ttsVolume').oninput = (e) => {
 };
 
 // ── Voice model management ───────────────────────────────────────────────
-let availableModels = [];
-let modelBrowserOpen = false;
-let prevDownloadKeys = [];
 
 function renderInstalledModels(installed, activeModelPath) {
     const el = document.getElementById('installedModelsList');
