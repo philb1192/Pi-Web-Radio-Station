@@ -11,6 +11,7 @@ import logging
 import re
 import shutil
 import subprocess
+import time
 from aiohttp import web
 from typing import Optional
 import os
@@ -425,6 +426,31 @@ class RadioServer:
         self.state['preview_station'] = None
         self._preview_was_playing = False
         self._preview_interrupted_station = None
+
+    async def _browser_idle_loop(self):
+        """Switch audio output back to Pi after 15 min of browser inactivity."""
+        IDLE_TIMEOUT = 15 * 60  # seconds
+        idle_since: Optional[float] = None
+        while True:
+            try:
+                await asyncio.sleep(30)
+                if self.state.get('audio_output') == 'browser' and not self.state.get('playing'):
+                    if idle_since is None:
+                        idle_since = time.time()
+                    elif time.time() - idle_since >= IDLE_TIMEOUT:
+                        logger.info("Browser audio idle for 15 min — reverting to Pi output")
+                        self.state['audio_output'] = 'pi'
+                        idle_since = None
+                        # Resume mpv if logically playing
+                        if self.state['playing'] and self.state['current_station']:
+                            await self._play_current(self.state['current_station']['url'])
+                        await self.broadcast_state()
+                else:
+                    idle_since = None
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                logger.exception("browser_idle_loop error")
 
     async def _play_current(self, url: str):
         """Start mpv on the Pi with fade-out/in. No-op when routed to browser."""
@@ -1215,12 +1241,14 @@ def main():
         app['tts_task'] = asyncio.create_task(server._tts_worker())
         app['watchdog_task'] = asyncio.create_task(server._stream_watchdog_loop())
         app['health_task'] = asyncio.create_task(server._station_health_loop())
+        app['browser_idle_task'] = asyncio.create_task(server._browser_idle_loop())
 
     async def cleanup_on_shutdown(app):
         app['metadata_task'].cancel()
         app['tts_task'].cancel()
         app['watchdog_task'].cancel()
         app['health_task'].cancel()
+        app['browser_idle_task'].cancel()
         server.cleanup()
 
     app.on_startup.append(on_startup)
