@@ -188,33 +188,9 @@ class AudioPlayer:
         return False
     
     def set_volume(self, volume: float):
-        """Set system volume (0.0 to 1.0)"""
+        """Set playback volume (0.0 to 1.0) via mpv IPC — no restart needed."""
         self.current_volume = volume
-        try:
-            percent = int(volume * 100)
-            result = subprocess.run(
-                ['amixer', 'sset', 'PCM', f'{percent}%'],
-                capture_output=True,
-                text=True
-            )
-            
-            if result.returncode != 0:
-                # Try setting Master instead
-                subprocess.run(
-                    ['amixer', 'sset', 'Master', f'{percent}%'],
-                    capture_output=True,
-                    text=True
-                )
-            
-            logger.info(f"Volume set to {percent}%")
-            
-            # If currently playing, restart with new volume
-            if self.is_playing() and self.current_url:
-                logger.info("Restarting playback with new volume")
-                url = self.current_url
-                self.stop()
-                time.sleep(0.2)
-                self.play(url)
-                
-        except Exception as e:
-            logger.error(f"Failed to set volume: {e}")
+        percent = int(volume * 100)
+        if self.is_playing():
+            self._mpv_set_vol(percent)
+        logger.info(f"Volume set to {percent}%")

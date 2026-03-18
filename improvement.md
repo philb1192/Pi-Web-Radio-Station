@@ -164,8 +164,4 @@ controlled with `playerctl` or any MPRIS-aware tool (waybar, i3status, etc.).
 
 ## Known Issues / Technical Debt
 
-- `set_volume()` in `audio_player.py` restarts mpv to apply changes, bypassing
-  the `_play_lock`. Should be updated to use mpv IPC volume control instead.
-- TTS `speak()` uses `amixer` for volume, which affects system-wide audio.
-  Ideally TTS would also use a software volume stage to avoid touching ALSA.
 - No rate limiting on `/api/speak` — a client could flood the TTS queue.

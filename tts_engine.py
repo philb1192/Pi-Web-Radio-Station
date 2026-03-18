@@ -98,33 +98,18 @@ class TTSEngine:
             logger.error("No voice model configured")
             return False
         
-        # Store original system volume
-        original_volume = None
-        try:
-            result = subprocess.run(['amixer', 'sget', 'PCM'], capture_output=True, text=True, timeout=2)
-            if result.returncode == 0:
-                # Parse volume from output like "[75%]"
-                import re
-                match = re.search(r'\[(\d+)%\]', result.stdout)
-                if match:
-                    original_volume = int(match.group(1))
-                    logger.info(f"Saved original system volume: {original_volume}%")
-        except Exception as e:
-            logger.warning(f"Could not get original volume: {e}")
-        
         try:
             logger.info(f"Starting Piper TTS generation...")
-            
+
             # Set up environment for audio
             env = os.environ.copy()
-            user = os.getenv('USER', 'pi')
             uid = os.getuid()
             env['XDG_RUNTIME_DIR'] = f'/run/user/{uid}'
-            
+
             # Create a temporary WAV file
             with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_wav:
                 temp_wav_path = temp_wav.name
-            
+
             try:
                 # Run Piper to generate speech
                 piper_process = subprocess.Popen(
@@ -135,79 +120,39 @@ class TTSEngine:
                     env=env,
                     text=True
                 )
-                
+
                 # Send text to piper
                 stdout, stderr = piper_process.communicate(input=text, timeout=30)
-                
+
                 if piper_process.returncode != 0:
                     logger.error(f"Piper failed: {stderr}")
                     return False
-                
-                # Volume is already 0-100%, use directly for amixer
-                logger.info(f"Setting system volume to {self.volume}% for TTS")
-                
-                # Set system volume using amixer
-                volume_set = False
-                try:
-                    result = subprocess.run(
-                        ['amixer', 'sset', 'PCM', f'{self.volume}%'],
-                        capture_output=True,
-                        timeout=2
-                    )
-                    if result.returncode == 0:
-                        volume_set = True
-                except Exception:
-                    pass
 
-                if not volume_set:
-                    # Try Master if PCM doesn't work
-                    try:
-                        subprocess.run(
-                            ['amixer', 'sset', 'Master', f'{self.volume}%'],
-                            capture_output=True,
-                            timeout=2
-                        )
-                    except Exception:
-                        logger.warning("Could not set volume via amixer")
-                
-                # Play the generated WAV file using aplay
+                # Play via mpv with software volume — no system ALSA volume change
                 play_process = subprocess.run(
-                    ['aplay', '-q', temp_wav_path],
+                    [
+                        'mpv', '--no-video',
+                        '--audio-device=alsa/hw:0,0',
+                        '--really-quiet',
+                        f'--volume={self.volume}',
+                        temp_wav_path
+                    ],
                     capture_output=True,
                     text=True,
                     timeout=30,
                     env=env
                 )
-                
+
                 if play_process.returncode == 0:
                     logger.info("Piper TTS completed successfully")
                 else:
-                    logger.error(f"aplay failed: {play_process.stderr}")
+                    logger.error(f"mpv TTS playback failed: {play_process.stderr}")
                     return False
-                    
+
             finally:
                 # Clean up temporary file
                 if os.path.exists(temp_wav_path):
                     os.unlink(temp_wav_path)
-                
-                # Restore original system volume
-                if original_volume is not None:
-                    logger.info(f"Restoring system volume to {original_volume}%")
-                    try:
-                        subprocess.run(
-                            ['amixer', 'sset', 'PCM', f'{original_volume}%'],
-                            capture_output=True,
-                            timeout=2
-                        )
-                    except Exception:
-                        try:
-                            subprocess.run(
-                                ['amixer', 'sset', 'Master', f'{original_volume}%'],
-                                capture_output=True,
-                                timeout=2
-                            )
-                        except Exception:
-                            logger.warning("Could not restore original volume")
             
             return True
                 
